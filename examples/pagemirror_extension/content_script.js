@@ -12,34 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var observer;
+(function () {
+  if (typeof WebKitMutationObserver != 'function') {
+    console.error('This example extension requires MutationObservers. Try the Chrome Canary build.');
+    return;
+  }
 
-if (typeof WebKitMutationObserver != 'function') {
-  console.error('This example extension requires MutationObservers. ' +
-                'Try the Chrome Canary build.');
-  return;
-}
-
-chrome.extension.onConnect.addListener(function(port) {
-  port.postMessage({ base: location.href.match(/^(.*\/)[^\/]*$/)[1] });
-
-  var mirrorClient = new TreeMirrorClient(document, {
-    initialize: function(rootId, children) {
-      port.postMessage({
-        f: 'initialize',
-        args: [rootId, children]
-      });
-    },
-
-    applyChanged: function(removed, addedOrMoved, attributes, text) {
-      port.postMessage({
-        f: 'applyChanged',
-        args: [removed, addedOrMoved, attributes, text]
-      });
-    }
+  chrome.extension.onConnect.addListener(function(port) {
+    port.postMessage({ base: location.href.match(/^(.*\/)[^\/]*$/)[1] });
+  
+    var mirrorClient = new TreeMirrorClient(document, {
+      initialize: function(rootId, children) {
+        port.postMessage({
+          f: 'initialize',
+          args: [rootId, children]
+        });
+      },
+  
+      applyChanged: function(removed, addedOrMoved, attributes, text) {
+        port.postMessage({
+          f: 'applyChanged',
+          args: [removed, addedOrMoved, attributes, text]
+        });
+      }
+    });
+  
+    port.onDisconnect.addListener(function() {
+      mirrorClient.disconnect();
+    });
   });
-
-  port.onDisconnect.addListener(function() {
-    mirrorClient.disconnect();
-  });
-});
+})();
